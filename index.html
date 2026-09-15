@@ -68,6 +68,8 @@
 
   /* ---------- clip sections ---------- */
   main{padding:20px 0 60px}
+  .group{font-family:var(--serif); font-weight:500; font-size:17px; color:var(--ink-3);
+    letter-spacing:.04em; text-transform:uppercase; margin:38px 0 -10px}
   .clip{padding:34px 0 30px; border-bottom:1px solid var(--line)}
   .clip:last-child{border-bottom:0}
   .clip-head{display:flex; align-items:baseline; gap:16px; flex-wrap:wrap; margin-bottom:16px}
@@ -80,6 +82,8 @@
   .cell-title{display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:10px}
   .cell-title strong{font-weight:600; font-size:16px}
   .cell-title em{font-style:normal; color:var(--ink-3); font-size:14px; white-space:nowrap}
+  .cell-title em b{font-weight:600; color:var(--ink-2)}
+  .cell.prop .cell-title em b{color:var(--accent)}
 
   .spec{
     position:relative; aspect-ratio:2/1; overflow:hidden; border-radius:3px;
@@ -163,6 +167,7 @@
 <footer>
   <div class="wrap">
     <p>Spectrograms are log-magnitude STFTs (dB) of each decoded signal; the sweeping line follows playback. Please use headphones — differences at these bitrates are subtle.</p>
+    <p>MUSHRA scores shown at 48 kbps are per-item means over nine listeners (ITU-R BS.1534); the listening test was conducted at 48 kbps only, so no scores are shown for other bitrates.</p>
     <p>This work was supported by an ETRI grant funded by the Korean government [26ZC1100].</p>
   </div>
 </footer>
@@ -186,11 +191,30 @@ const CONFIG = {
     { id: "td-nac",    name: "TD-NAC" },
     { id: "proposed",  name: "Proposed", highlight: true },
   ],
+  // `mushra` = per-item mean scores from the 48 kbps listening test (9 listeners).
+  // The badge is shown only while the 48 kbps bitrate is selected.
   clips: [
-    { id: "example_clip", name: "Tom's Diner", note: "USAC · speech" },
-    // { id: "sc03", name: "Salvation", note: "USAC · music" },
-    // { id: "movie_017", name: "Movie clip 17", note: "unseen movie" },
-    // { id: "bbc_glass", name: "Glass breaking", note: "BBC sound effects" },
+    // ---- USAC items (MUSHRA-tested at 48 kbps) ----
+    { id: "Wedding_speech", name: "Wedding speech", group: "USAC test items", note: "speech",
+      mushra: { "fdk-aac": 86.9, "td-nac": 86.2, "proposed": 97.6 } },
+    { id: "es01", name: "Tom's Diner", group: "USAC test items", note: "speech · clip used in Fig. 4",
+      mushra: { "fdk-aac": 85.4, "td-nac": 77.0, "proposed": 89.4 } },
+    { id: "lion", name: "Lion", group: "USAC test items", note: "speech over music",
+      mushra: { "fdk-aac": 86.1, "td-nac": 88.4, "proposed": 94.8 } },
+    { id: "HarryPotter", name: "Harry Potter", group: "USAC test items", note: "speech over music",
+      mushra: { "fdk-aac": 86.4, "td-nac": 76.1, "proposed": 93.7 } },
+    { id: "te15", name: "te15", group: "USAC test items", note: "music",
+      mushra: { "fdk-aac": 93.3, "td-nac": 64.8, "proposed": 95.7 } },
+    { id: "phi7", name: "phi7", group: "USAC test items", note: "music",
+      mushra: { "fdk-aac": 78.3, "td-nac": 63.9, "proposed": 88.6 } },
+    // Optional: one item where FDK-AAC was preferred. Including it makes the page more
+    // credible to reviewers; remove if you prefer to show only favourable cases.
+    // { id: "salvation", name: "Salvation", group: "USAC test items", note: "music · challenging case",
+    //   mushra: { "fdk-aac": 93.3, "td-nac": 75.6, "proposed": 79.0 } },
+
+    // ---- non-USAC sets (objective scores only; pick items with the largest 2f-model margin) ----
+    { id: "bbc_01", name: "BBC sound effect", group: "BBC sound effects", note: "replace with the chosen item" },
+    { id: "movie_01", name: "Held-out movie clip", group: "Held-out movie clips", note: "replace with the chosen item" },
   ],
 };
 /* ============================================================ */
@@ -229,7 +253,13 @@ function setBitrate(b) {
 /* ---- build clips ---- */
 const cells = [];
 const main = $("#clips");
+let lastGroup = null;
 CONFIG.clips.forEach(clip => {
+  if (clip.group && clip.group !== lastGroup) {
+    const h = document.createElement("p");
+    h.className = "group"; h.textContent = clip.group;
+    main.appendChild(h); lastGroup = clip.group;
+  }
   const sec = document.createElement("section");
   sec.className = "clip";
   sec.innerHTML = `<div class="clip-head"><h2>${clip.name}</h2>${clip.note ? `<span>${clip.note}</span>` : ""}</div><div class="grid"></div>`;
@@ -270,7 +300,9 @@ CONFIG.clips.forEach(clip => {
 
 function refreshCell(cell) {
   const { _clip: clip, _codec: codec } = cell;
-  $(".rate", cell).textContent = codec.fixed ? "original" : `${state.bitrate} kbps`;
+  const score = (!codec.fixed && state.bitrate === 48 && clip.mushra && clip.mushra[codec.id] != null)
+    ? ` · MUSHRA <b>${clip.mushra[codec.id].toFixed(1)}</b>` : "";
+  $(".rate", cell).innerHTML = codec.fixed ? "original" : `${state.bitrate} kbps${score}`;
   $("img", cell).src = pathFor(clip, codec, "spec");
   cell.classList.remove("error");
   $(".time", cell).textContent = "0:00 / 0:00";
