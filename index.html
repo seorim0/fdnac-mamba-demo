@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zero-Overhead Context Modeling via Causal Mamba for High-Fidelity FD-NAC — Audio samples</title>
+<meta name="description" content="Listening samples and spectrograms comparing the proposed FD-NAC against FDK-AAC and TD-NAC at 32, 40, 48 and 56 kbps.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B1F2A;
+    --ink-2:#4A4F5C;
+    --ink-3:#8A8F9C;
+    --line:#DAD8D2;
+    --paper:#FFFFFF;
+    --field:#F3F2EE;
+    --accent:#A8306E;      /* magma magenta: play / active */
+    --accent-soft:#F6E4EE;
+    --prop:#EEF3F8;        /* proposed column tint */
+    --serif:"Newsreader", Georgia, serif;
+    --sans:"Source Sans 3", "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--sans); font-size:17px; line-height:1.5;
+  }
+  a{color:var(--accent); text-decoration:none; border-bottom:1px solid currentColor}
+  a:hover{border-bottom-width:2px}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 28px}
+
+  /* ---------- header ---------- */
+  header{padding:56px 0 32px; border-bottom:1px solid var(--line)}
+  h1{
+    font-family:var(--serif); font-weight:500; font-size:clamp(28px,3.4vw,42px);
+    line-height:1.15; letter-spacing:-.01em; margin:0 0 18px; max-width:22em;
+  }
+  .authors{font-size:17px; color:var(--ink-2); margin:0 0 6px; max-width:60em}
+  .authors sup{font-size:.7em}
+  .affil{font-size:15px; color:var(--ink-3); margin:0 0 22px}
+  .links{display:flex; flex-wrap:wrap; gap:10px 22px; font-size:16px}
+  .abstract{
+    margin:34px 0 0; padding-top:26px; border-top:1px solid var(--line);
+    font-family:var(--serif); font-size:19px; line-height:1.55; color:var(--ink-2); max-width:44em;
+  }
+
+  /* ---------- controls ---------- */
+  .controls{
+    position:sticky; top:0; z-index:5; background:rgba(255,255,255,.94);
+    backdrop-filter:blur(6px); border-bottom:1px solid var(--line);
+  }
+  .controls .wrap{display:flex; flex-wrap:wrap; align-items:center; gap:14px 28px; padding-top:14px; padding-bottom:14px}
+  .controls p{margin:0; color:var(--ink-2); font-size:16px}
+  .bitrates{display:inline-flex; border:1px solid var(--ink); border-radius:999px; overflow:hidden}
+  .bitrates button{
+    appearance:none; border:0; background:transparent; color:var(--ink);
+    font:inherit; font-weight:500; font-size:15px; padding:7px 16px; cursor:pointer;
+  }
+  .bitrates button + button{border-left:1px solid var(--ink)}
+  .bitrates button[aria-pressed="true"]{background:var(--ink); color:#fff}
+  .bitrates button:focus-visible{outline-offset:-3px; outline-color:#fff}
+  .hint{margin-left:auto; font-size:15px; color:var(--ink-3)}
+
+  /* ---------- clip sections ---------- */
+  main{padding:20px 0 60px}
+  .clip{padding:34px 0 30px; border-bottom:1px solid var(--line)}
+  .clip:last-child{border-bottom:0}
+  .clip-head{display:flex; align-items:baseline; gap:16px; flex-wrap:wrap; margin-bottom:16px}
+  .clip-head h2{font-family:var(--serif); font-weight:500; font-size:25px; margin:0}
+  .clip-head span{color:var(--ink-3); font-size:15px}
+
+  .grid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px}
+  .cell{border:1px solid var(--line); border-radius:6px; padding:12px 12px 10px; background:var(--paper)}
+  .cell.prop{background:var(--prop); border-color:#C7D3E1}
+  .cell-title{display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:10px}
+  .cell-title strong{font-weight:600; font-size:16px}
+  .cell-title em{font-style:normal; color:var(--ink-3); font-size:14px; white-space:nowrap}
+
+  .spec{
+    position:relative; aspect-ratio:2/1; overflow:hidden; border-radius:3px;
+    background:var(--field); cursor:pointer;
+  }
+  .spec img{display:block; width:100%; height:100%; object-fit:fill}
+  .spec .missing{
+    position:absolute; inset:0; display:none; place-items:center; text-align:center;
+    color:var(--ink-3); font-size:13px; padding:10px;
+  }
+  .spec.no-img img{display:none}
+  .spec.no-img .missing{display:grid}
+  .playhead{
+    position:absolute; top:0; bottom:0; left:0; width:2px; background:#fff;
+    box-shadow:0 0 0 1px rgba(0,0,0,.35); opacity:0; pointer-events:none;
+  }
+  .cell.active .playhead{opacity:1}
+  .cell.active .spec{outline:2px solid var(--accent); outline-offset:1px}
+
+  .bar{display:flex; align-items:center; gap:10px; margin-top:10px}
+  .play{
+    appearance:none; border:1px solid var(--ink); background:var(--paper); color:var(--ink);
+    width:34px; height:34px; border-radius:50%; cursor:pointer; flex:none;
+    display:grid; place-items:center; padding:0;
+  }
+  .play svg{width:14px; height:14px; fill:currentColor}
+  .play .ic-pause{display:none}
+  .cell.playing .play{background:var(--accent); border-color:var(--accent); color:#fff}
+  .cell.playing .play .ic-play{display:none}
+  .cell.playing .play .ic-pause{display:block}
+  .time{font-variant-numeric:tabular-nums; font-size:14px; color:var(--ink-2); min-width:5.5em}
+  .track{flex:1; height:4px; background:var(--line); border-radius:2px; overflow:hidden}
+  .track i{display:block; height:100%; width:0; background:var(--accent)}
+  .err{font-size:13px; color:var(--accent); margin:6px 0 0; display:none}
+  .cell.error .err{display:block}
+
+  footer{border-top:1px solid var(--line); padding:26px 0 48px; color:var(--ink-3); font-size:15px}
+  footer p{margin:0 0 6px; max-width:60em}
+
+  @media (max-width:900px){ .grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  @media (max-width:520px){
+    body{font-size:16px} .wrap{padding:0 18px}
+    .grid{grid-template-columns:1fr} header{padding-top:36px}
+    .hint{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Zero-Overhead Context Modeling via Causal Mamba for High-Fidelity Frequency-Domain Neural Audio Coding</h1>
+    <p class="authors">Seorim Hwang<sup>1</sup>, Seungmin Shin<sup>1</sup>, Jongmo Sung<sup>2</sup>, Seungkwon Beack<sup>2</sup>, Youngcheol Park<sup>1</sup></p>
+    <p class="affil"><sup>1</sup>Yonsei University, Wonju, Korea &nbsp;&nbsp; <sup>2</sup>ETRI, Daejeon, Korea</p>
+    <div class="links">
+      <a href="#" id="link-paper">Paper (PDF)</a>
+      <a href="https://github.com/seorim0" rel="author">GitHub</a>
+      <a href="#samples">Skip to samples</a>
+    </div>
+    <p class="abstract">
+      We propose a strictly autoregressive, zero-overhead hybrid context model for MDCT-based neural audio coding.
+      Masked 2D convolutions and causal ConvNeXt blocks extract local time-frequency textures, and a unidirectional
+      Mamba stack models long-range dependencies along the frequency axis with linear complexity. No hyperprior side
+      information is transmitted. Below, the proposed codec is compared against FDK-AAC (LC) and our previous
+      time-domain NAC at 32, 40, 48 and 56 kbps.
+    </p>
+  </div>
+</header>
+
+<div class="controls" id="samples">
+  <div class="wrap">
+    <p>Bitrate</p>
+    <div class="bitrates" role="group" aria-label="Bitrate" id="bitrates"></div>
+    <span class="hint">Click a spectrogram or the round button to play. Only one clip plays at a time.</span>
+  </div>
+</div>
+
+<main class="wrap" id="clips"></main>
+
+<footer>
+  <div class="wrap">
+    <p>Spectrograms are log-magnitude STFTs (dB) of each decoded signal; the sweeping line follows playback. Please use headphones — differences at these bitrates are subtle.</p>
+    <p>This work was supported by an ETRI grant funded by the Korean government [26ZC1100].</p>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   CONFIGURATION — edit this block only.
+   Expected files (relative to this page):
+     audio/<clip.id>/reference.wav
+     audio/<clip.id>/<codec.id>_<bitrate>.wav     e.g. audio/toms_diner/proposed_48.wav
+     spec/<clip.id>/reference.png
+     spec/<clip.id>/<codec.id>_<bitrate>.png
+   ============================================================ */
+const CONFIG = {
+  paperUrl: "#",                                   // link to the PDF once available
+  bitrates: [32, 40, 48, 56],
+  defaultBitrate: 48,
+  codecs: [
+    { id: "reference", name: "Reference", fixed: true },   // fixed: same file for every bitrate
+    { id: "fdk-aac",   name: "FDK-AAC (LC)" },
+    { id: "td-nac",    name: "TD-NAC" },
+    { id: "proposed",  name: "Proposed", highlight: true },
+  ],
+  clips: [
+    { id: "example_clip", name: "Tom's Diner", note: "USAC · speech" },
+    // { id: "sc03", name: "Salvation", note: "USAC · music" },
+    // { id: "movie_017", name: "Movie clip 17", note: "unseen movie" },
+    // { id: "bbc_glass", name: "Glass breaking", note: "BBC sound effects" },
+  ],
+};
+/* ============================================================ */
+
+const $ = (s, el = document) => el.querySelector(s);
+const state = { bitrate: CONFIG.defaultBitrate, current: null };
+const audio = new Audio();
+audio.preload = "none";
+
+$("#link-paper").href = CONFIG.paperUrl;
+
+const pathFor = (clip, codec, kind) => {
+  const ext = kind === "audio" ? "wav" : "png";
+  const stem = codec.fixed ? codec.id : `${codec.id}_${state.bitrate}`;
+  return `${kind}/${clip.id}/${stem}.${ext}`;
+};
+const fmt = t => (isFinite(t) ? `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}` : "0:00");
+
+/* ---- bitrate switcher ---- */
+const bitrateBox = $("#bitrates");
+CONFIG.bitrates.forEach(b => {
+  const btn = document.createElement("button");
+  btn.type = "button"; btn.textContent = `${b} kbps`;
+  btn.setAttribute("aria-pressed", b === state.bitrate);
+  btn.addEventListener("click", () => setBitrate(b));
+  bitrateBox.appendChild(btn);
+});
+function setBitrate(b) {
+  if (b === state.bitrate) return;
+  state.bitrate = b;
+  stop();
+  [...bitrateBox.children].forEach(el => el.setAttribute("aria-pressed", el.textContent.startsWith(b + " ")));
+  document.querySelectorAll(".cell").forEach(refreshCell);
+}
+
+/* ---- build clips ---- */
+const cells = [];
+const main = $("#clips");
+CONFIG.clips.forEach(clip => {
+  const sec = document.createElement("section");
+  sec.className = "clip";
+  sec.innerHTML = `<div class="clip-head"><h2>${clip.name}</h2>${clip.note ? `<span>${clip.note}</span>` : ""}</div><div class="grid"></div>`;
+  const grid = $(".grid", sec);
+  CONFIG.codecs.forEach(codec => {
+    const cell = document.createElement("div");
+    cell.className = "cell" + (codec.highlight ? " prop" : "");
+    cell.innerHTML = `
+      <div class="cell-title"><strong>${codec.name}</strong><em class="rate"></em></div>
+      <div class="spec" role="button" tabindex="0" aria-label="Play ${codec.name}, ${clip.name}">
+        <img alt="Spectrogram, ${codec.name}, ${clip.name}" loading="lazy">
+        <div class="missing">Spectrogram not found</div>
+        <div class="playhead"></div>
+      </div>
+      <div class="bar">
+        <button class="play" type="button" aria-label="Play">
+          <svg class="ic-play" viewBox="0 0 16 16"><path d="M3 2l11 6-11 6z"/></svg>
+          <svg class="ic-pause" viewBox="0 0 16 16"><path d="M3 2h4v12H3zM9 2h4v12H9z"/></svg>
+        </button>
+        <span class="time">0:00 / 0:00</span>
+        <div class="track"><i></i></div>
+      </div>
+      <p class="err">Audio file not found</p>`;
+    cell._clip = clip; cell._codec = codec;
+    const img = $("img", cell), spec = $(".spec", cell);
+    img.addEventListener("error", () => spec.classList.add("no-img"));
+    img.addEventListener("load", () => spec.classList.remove("no-img"));
+    const toggle = () => togglePlay(cell);
+    $(".play", cell).addEventListener("click", toggle);
+    spec.addEventListener("click", toggle);
+    spec.addEventListener("keydown", e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); toggle(); } });
+    grid.appendChild(cell);
+    cells.push(cell);
+    refreshCell(cell);
+  });
+  main.appendChild(sec);
+});
+
+function refreshCell(cell) {
+  const { _clip: clip, _codec: codec } = cell;
+  $(".rate", cell).textContent = codec.fixed ? "original" : `${state.bitrate} kbps`;
+  $("img", cell).src = pathFor(clip, codec, "spec");
+  cell.classList.remove("error");
+  $(".time", cell).textContent = "0:00 / 0:00";
+  $(".track i", cell).style.width = "0";
+}
+
+/* ---- single shared player ---- */
+function togglePlay(cell) {
+  if (state.current === cell) { audio.paused ? audio.play() : audio.pause(); return; }
+  stop();
+  state.current = cell;
+  cell.classList.add("active");
+  audio.src = pathFor(cell._clip, cell._codec, "audio");
+  audio.play().catch(() => {});
+}
+function stop() {
+  audio.pause();
+  if (state.current) {
+    state.current.classList.remove("active", "playing");
+    $(".playhead", state.current).style.left = "0";
+    $(".track i", state.current).style.width = "0";
+    state.current = null;
+  }
+}
+audio.addEventListener("timeupdate", () => {
+  const c = state.current; if (!c || !audio.duration) return;
+  const p = audio.currentTime / audio.duration;
+  $(".playhead", c).style.left = `${p * 100}%`;
+  $(".track i", c).style.width = `${p * 100}%`;
+  $(".time", c).textContent = `${fmt(audio.currentTime)} / ${fmt(audio.duration)}`;
+});
+audio.addEventListener("loadedmetadata", () => {
+  const c = state.current; if (c) $(".time", c).textContent = `0:00 / ${fmt(audio.duration)}`;
+});
+audio.addEventListener("ended", stop);
+audio.addEventListener("pause", () => { const c = state.current; if (c) c.classList.remove("playing"); });
+audio.addEventListener("play",  () => { const c = state.current; if (c) c.classList.add("playing"); });
+audio.addEventListener("error", () => { const c = state.current; if (c) { c.classList.add("error"); stop(); } });
+</script>
+</body>
+</html>
